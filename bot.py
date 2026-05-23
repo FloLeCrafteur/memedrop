@@ -2,7 +2,7 @@
 Discord Overlay Bot
 Lit un salon Discord et diffuse les messages via WebSocket vers l'overlay desktop.
 """
-
+https://github.com/FloLeCrafteur/memedrop/blob/main/bot.py
 import discord
 import asyncio
 import websockets
@@ -98,13 +98,9 @@ async def on_message(message: discord.Message):
 
 
 async def main():
-    # Railway injecte automatiquement le port dans la variable d'environnement PORT
-    # Si on est en local (et que PORT n'existe pas), on garde 8765 par défaut
-    port = int(os.environ.get("PORT", 8765))
-    
-    # On écoute sur "0.0.0.0" pour accepter les connexions externes sur Railway
-    async with websockets.serve(ws_handler, "0.0.0.0", port):
-        print(f"[WS] Serveur démarré sur le port {port}")
+    # Lancer le serveur WebSocket en parallèle du bot Discord
+    async with websockets.serve(ws_handler, WS_HOST, WS_PORT):
+        print(f"[WS] Serveur démarré sur ws://{WS_HOST}:{WS_PORT}")
         await client.start(BOT_TOKEN)
 
 
