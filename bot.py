@@ -1,8 +1,8 @@
 """
-Discord Overlay Bot
-Lit un salon Discord et diffuse les messages via WebSocket vers l'overlay desktop.
+Discord Overlay Bot - Version Stable pour Railway
+Lit un salon Discord et diffuse via WebSocket sécurisé.
 """
-https://github.com/FloLeCrafteur/memedrop/blob/main/bot.py
+
 import discord
 import asyncio
 import websockets
@@ -11,59 +11,53 @@ import os
 from datetime import datetime
 
 # ─────────────────────────────────────────────
-#  CONFIG — modifier ces valeurs
+#  CONFIG — Via variables d'environnement sur Railway
 # ─────────────────────────────────────────────
-BOT_TOKEN      = "TOKEN"          # Token du bot Discord
-CHANNEL_ID     = 1507734070535258154        # ID du salon à surveiller (int)
-WS_HOST        = "ws://memedrop-production-80af.up.railway.app"
-WS_PORT        = 8765
+# Sur Railway, configurez ces variables dans l'onglet "Variables"
+BOT_TOKEN  = os.environ.get("TOKEN", "VOTRE_TOKEN_LOCAL_SI_TEST")
+CHANNEL_ID = int(os.environ.get("CHANNEL_ID", 1507734070535258154))
+PORT       = int(os.environ.get("PORT", 8765)) # Railway fournit le port automatiquement
 # ─────────────────────────────────────────────
 
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
 
-# Ensemble des clients WebSocket connectés
-connected_clients: set = set()
-
+# Liste des overlays connectés (vos amis)
+connected_clients = set()
 
 async def broadcast(payload: dict):
-    """Envoie le message à tous les clients overlay connectés."""
+    """Envoie le message à tous les amis connectés en même temps."""
     if not connected_clients:
         return
     data = json.dumps(payload, ensure_ascii=False)
+    # asyncio.gather envoie à tout le monde en parallèle
     await asyncio.gather(
         *[ws.send(data) for ws in connected_clients],
         return_exceptions=True,
     )
 
-
 async def ws_handler(websocket):
-    """Gère une connexion WebSocket entrante (depuis l'overlay)."""
+    """Gère la connexion de l'overlay d'un ami."""
     connected_clients.add(websocket)
-    print(f"[WS] Client connecté ({len(connected_clients)} total)")
+    print(f"[WS] Un ami s'est connecté. Total : {len(connected_clients)}")
     try:
+        # Attend que le client se déconnecte, sans bloquer
         await websocket.wait_closed()
     finally:
         connected_clients.discard(websocket)
-        print(f"[WS] Client déconnecté ({len(connected_clients)} restants)")
-
+        print(f"[WS] Un ami s'est déconnecté. Restants : {len(connected_clients)}")
 
 @client.event
 async def on_ready():
     ch = client.get_channel(CHANNEL_ID)
     name = ch.name if ch else "introuvable"
-    print(f"[Discord] Connecté en tant que {client.user}")
+    print(f"[Discord] Bot en ligne : {client.user}")
     print(f"[Discord] Surveillance du salon : #{name} ({CHANNEL_ID})")
-
 
 @client.event
 async def on_message(message: discord.Message):
-    # Filtrer uniquement le salon configuré
-    if message.channel.id != CHANNEL_ID:
-        return
-    # Ignorer les messages du bot lui-même
-    if message.author == client.user:
+    if message.channel.id != CHANNEL_ID or message.author == client.user:
         return
 
     attachments = []
@@ -77,32 +71,33 @@ async def on_message(message: discord.Message):
             kind = "audio"
         else:
             kind = "file"
+        
         attachments.append({
-            "url":      att.url,
+            "url": att.url,
             "filename": att.filename,
-            "kind":     kind,
-            "size":     att.size,
+            "kind": kind
         })
 
     payload = {
-        "id":          str(message.id),
-        "author":      message.author.display_name,
-        "avatar":      str(message.author.display_avatar.url),
-        "content":     message.content,
-        "timestamp":   datetime.utcnow().isoformat(),
+        "id": str(message.id),
+        "author": message.author.display_name,
+        "avatar": str(message.author.display_avatar.url),
+        "content": message.content,
+        "timestamp": datetime.utcnow().isoformat(),
         "attachments": attachments,
     }
 
-    print(f"[Discord] Message de {payload['author']}: {payload['content'][:60]}")
+    print(f"[Discord] Nouveau message de {payload['author']}")
     await broadcast(payload)
 
-
 async def main():
-    # Lancer le serveur WebSocket en parallèle du bot Discord
-    async with websockets.serve(ws_handler, WS_HOST, WS_PORT):
-        print(f"[WS] Serveur démarré sur ws://{WS_HOST}:{WS_PORT}")
+    # ping_interval=20 et ping_timeout=20 empêchent Railway de couper la connexion
+    async with websockets.serve(ws_handler, "0.0.0.0", PORT, ping_interval=20, ping_timeout=20):
+        print(f"[WS] Serveur WebSocket prêt sur le port {PORT}")
         await client.start(BOT_TOKEN)
 
-
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Arrêt du bot.")
