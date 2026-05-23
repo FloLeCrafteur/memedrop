@@ -11,7 +11,7 @@ import tkinter as tk
 from PIL import Image, ImageTk, ImageDraw
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
-WS_URL          = "ws://localhost:8765"
+WS_URL          = "ws://memedrop-production-80af.up.railway.app"
 OVERLAY_WIDTH   = 400
 MAX_TOASTS      = 5
 TOAST_DURATION  = 7          # secondes

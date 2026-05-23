@@ -15,7 +15,7 @@ from datetime import datetime
 # ─────────────────────────────────────────────
 BOT_TOKEN      = "TOKEN"          # Token du bot Discord
 CHANNEL_ID     = 1507734070535258154        # ID du salon à surveiller (int)
-WS_HOST        = "localhost"
+WS_HOST        = "0.0.0.0"
 WS_PORT        = 8765
 # ─────────────────────────────────────────────
 
@@ -98,9 +98,13 @@ async def on_message(message: discord.Message):
 
 
 async def main():
-    # Lancer le serveur WebSocket en parallèle du bot Discord
-    async with websockets.serve(ws_handler, WS_HOST, WS_PORT):
-        print(f"[WS] Serveur démarré sur ws://{WS_HOST}:{WS_PORT}")
+    # Railway injecte automatiquement le port dans la variable d'environnement PORT
+    # Si on est en local (et que PORT n'existe pas), on garde 8765 par défaut
+    port = int(os.environ.get("PORT", 8765))
+    
+    # On écoute sur "0.0.0.0" pour accepter les connexions externes sur Railway
+    async with websockets.serve(ws_handler, "0.0.0.0", port):
+        print(f"[WS] Serveur démarré sur le port {port}")
         await client.start(BOT_TOKEN)
 
 
