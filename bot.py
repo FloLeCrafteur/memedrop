@@ -15,7 +15,7 @@ from datetime import datetime
 # ─────────────────────────────────────────────
 BOT_TOKEN      = "TOKEN"          # Token du bot Discord
 CHANNEL_ID     = 1507734070535258154        # ID du salon à surveiller (int)
-WS_HOST        = "0.0.0.0"
+WS_HOST        = "ws://memedrop-production-80af.up.railway.app"
 WS_PORT        = 8765
 # ─────────────────────────────────────────────
 
