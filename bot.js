@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 
 // ─── CONFIG ─────────────────────────────────────────────────────────────────
-const DISCORD_TOKEN = process.env.DISCORD_TOKEN || "MTUwNzczNDgwMDk3MzMwMzk0MA.GaSEeB.VxvldMmHfBc79BjKxUwiclgS_uGExdMWH9-JWg";
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN || "TON_TOKEN_ICI";
 const CHANNEL_ID = process.env.CHANNEL_ID || "1507734070535258154";
 const WS_PORT = process.env.WS_PORT || 8765;
 const HTTP_PORT = process.env.HTTP_PORT || 8766;
